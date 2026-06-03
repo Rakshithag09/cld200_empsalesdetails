@@ -23,7 +23,7 @@ jobs:
       - name: Build CAP project
         run: |
           npm install
-          cds build --production
+          npx cds build --production
 
       - name: Install MTA Build Tool
         run: npm install -g mbt
