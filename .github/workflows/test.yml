@@ -9,32 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Build CAP
-        run: |
-          npm ci
-          npx cds build --production
+      - name: Install CAP CLI
+        run: npm install -g @sap/cds
 
-      - name: Install MBT
+      - name: Build CAP project
+        run: |
+          npm install
+          cds build --production
+
+      - name: Install MTA Build Tool
         run: npm install -g mbt
 
       - name: Build MTAR
         run: mbt build -p cf
 
-      - name: Install CF CLI
+      - name: Install Cloud Foundry CLI
         run: |
           wget https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github -O cf-cli.tgz
           tar -xvf cf-cli.tgz
           sudo mv cf /usr/local/bin
 
-      - name: Install Multiapps Plugin
+      - name: Install MultiApps Plugin
         run: cf install-plugin multiapps -f
 
       - name: Login to Cloud Foundry
@@ -45,5 +48,5 @@ jobs:
                    -o ${{ secrets.CF_ORG }} \
                    -s ${{ secrets.CF_SPACE }}
 
-      - name: Deploy
+      - name: Deploy to Cloud Foundry
         run: cf deploy mta_archives/*.mtar -f
