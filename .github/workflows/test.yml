@@ -15,10 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
-
-      - name: Install CAP CLI
-        run: npm install -g @sap/cds
+          node-version: 20
 
       - name: Build CAP project
         run: |
