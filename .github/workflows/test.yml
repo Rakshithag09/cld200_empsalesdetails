@@ -1,19 +1,49 @@
-name: CAP CI Pipeline
+name: CAP Auto Deploy
 
 on:
   push:
     branches: [ main ]
-  pull_request:
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run : npm i
-      - run: npm ci
-      - run: npx cds build
+
+      - name: Build CAP
+        run: |
+          npm ci
+          npx cds build --production
+
+      - name: Install MBT
+        run: npm install -g mbt
+
+      - name: Build MTAR
+        run: mbt build -p cf
+
+      - name: Install CF CLI
+        run: |
+          wget https://packages.cloudfoundry.org/stable?release=linux64-binary&source=github -O cf-cli.tgz
+          tar -xvf cf-cli.tgz
+          sudo mv cf /usr/local/bin
+
+      - name: Install Multiapps Plugin
+        run: cf install-plugin multiapps -f
+
+      - name: Login to Cloud Foundry
+        run: |
+          cf login -a ${{ secrets.CF_API }} \
+                   -u ${{ secrets.CF_USERNAME }} \
+                   -p ${{ secrets.CF_PASSWORD }} \
+                   -o ${{ secrets.CF_ORG }} \
+                   -s ${{ secrets.CF_SPACE }}
+
+      - name: Deploy
+        run: cf deploy mta_archives/*.mtar -f
